@@ -1,0 +1,115 @@
+#include <Wire.h>
+#include <ArduinoJson.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include <WebSocketsServer.h>
+#include <DHT.h>
+#define DHTTYPE    DHT11     // DHT 11
+
+ 
+#define btn_input 13
+
+DHT dht(D1, DHTTYPE);
+
+WebSocketsServer webSocket = WebSocketsServer(81);
+ESP8266WebServer server;
+
+char* ssid = "Crodon";
+char* password = "222000111";
+
+void setup() {
+  pinMode(btn_input,INPUT);
+ Serial.begin(115200); /* begin serial for debug */
+
+  dht.begin();
+ 
+ 
+
+ //------------------------------------------------------- Server programming -------------------------------------------------------------------------------------------------------
+
+  
+ WiFi.begin(ssid,password);
+  Serial.begin(115200);
+  while(WiFi.status()!=WL_CONNECTED)
+  {
+    Serial.print(".");
+    delay(500);
+  }
+  Serial.println("");
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
+
+  webSocket.begin();
+  webSocket.onEvent(webSocketEvent);
+
+
+ //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! End of server programming !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+}
+
+void loop() {
+
+  webSocket.loop();
+
+}
+
+
+
+  //@override
+void webSocketEvent(uint8_t num,WStype_t type,uint8_t * payload, size_t length){    // When we get anything from the server this function is ececuted by the method onEvent
+
+
+  String val = ""; 
+  if(type == WStype_TEXT)
+  {
+    for(int i=0; i<length;i++)
+    {
+      //Serial.print((char)payload[i]);
+      val = val + char(payload[i]);
+      }
+      Serial.println(val);//--------------------------------------------------------------------------------------------------------------------------------
+     
+
+     
+      
+      if(val=="temperature")
+      {
+        char result[8]; // Buffer big enough for 7-character float
+        dtostrf(dht.readTemperature(), 6, 2, result); // Leave room for too large numbers!
+      char c[] = "";
+      webSocket.broadcastTXT(result,sizeof(result));
+        }
+       if(val=="humidity")
+      {
+        char result[8]; // Buffer big enough for 7-character float
+        dtostrf(dht.readHumidity(), 6, 2, result); // Leave room for too large numbers!
+      char c[] = "";
+      webSocket.broadcastTXT(result,sizeof(result));
+        }
+     
+      if(val=="hello")
+      {
+        char result[8]; // Buffer big enough for 7-character float
+       dtostrf(123, 6, 2, result); // Leave room for too large numbers!
+      char c[] = "";
+      
+      webSocket.broadcastTXT(result,sizeof(result));
+        }
+      
+      //----------------------------------------------------------------------------------------------------------------------------------------------------
+     
+    }
+  }
+
+char* string2char(String command){
+    if(command.length()!=0){
+        char *p = const_cast<char*>(command.c_str());
+        return p;
+    }
+
+
+ }
+
+
+                             
+  
+  
